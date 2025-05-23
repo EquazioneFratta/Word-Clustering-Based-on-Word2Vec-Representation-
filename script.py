@@ -1,6 +1,5 @@
 import re
 import string
-import os
 import requests
 from nltk.corpus import stopwords
 from nltk.tokenize import word_tokenize
@@ -9,18 +8,12 @@ from sklearn.cluster import KMeans
 from sklearn.decomposition import PCA
 import matplotlib.pyplot as plt
 import seaborn as sns
-import numpy as np
 import nltk
 
-# Download necessary NLTK resources
-nltk.download('punkt')
+nltk.download('punkt_tab')
 nltk.download('stopwords')
 
-def visualize_vectors(model, words, title=None, save_path=None):
-    """
-    Visualize word vectors using PCA.
-    """
-    # Check if words are in the vocabulary (case insensitive)
+def visualize_vectors(model, words, save_path=None):
     vectors = []
     labels = []
     missing_words = []
@@ -40,19 +33,12 @@ def visualize_vectors(model, words, title=None, save_path=None):
         print("Non ci sono abbastanza parole nel vocabolario per visualizzare.")
         return
     
-    # Apply PCA
     pca = PCA(n_components=2)
     reduced_vectors = pca.fit_transform(vectors)
     
-    # Generate plot title if not provided
-    if title is None:
-        title = "Visualizzazione vettori di parole (PCA)"
-    
-    # Create visualization
     plt.figure(figsize=(10, 7))
     plt.scatter(reduced_vectors[:, 0], reduced_vectors[:, 1], s=100)
     
-    # Add word labels
     for i, word in enumerate(labels):
         plt.annotate(word, 
                     (reduced_vectors[i, 0], reduced_vectors[i, 1]),
@@ -61,7 +47,7 @@ def visualize_vectors(model, words, title=None, save_path=None):
                     xytext=(5, 2),
                     textcoords='offset points')
     
-    plt.title(title)
+    plt.title("Visualizzazione vettori di parole (PCA)")
     plt.xlabel("Dimensione 1")
     plt.ylabel("Dimensione 2")
     plt.grid(True)
@@ -72,10 +58,8 @@ def visualize_vectors(model, words, title=None, save_path=None):
     plt.show()
 
 def download_gutenberg_book(url_or_id):
-    """
-    Download a book from Project Gutenberg.
-    """
-    # If input is a URL, extract the ID
+    #TODO: estrare l'ID del libro da un URL e poi sotto ricrea l'URL con l'ide estratto, mi sembra una cosa idiota
+    # se l'input è un URL, estrai l'ID del libro
     if isinstance(url_or_id, str) and url_or_id.startswith('http'):
         match = re.search(r'/(\d+)/?$', url_or_id)
         if match:
@@ -85,48 +69,27 @@ def download_gutenberg_book(url_or_id):
     else:
         book_id = str(url_or_id)
     
-    # Map of some common book IDs to titles
-    book_titles = {
-        "84": "Frankenstein di Mary Shelley",
-        "2701": "Moby Dick di Herman Melville",
-        "1342": "Orgoglio e Pregiudizio di Jane Austen",
-        "11": "Alice nel Paese delle Meraviglie di Lewis Carroll",
-        "1661": "Le avventure di Sherlock Holmes di Arthur Conan Doyle",
-        "74": "Le avventure di Tom Sawyer di Mark Twain",
-        "1400": "Grande Aspettative di Charles Dickens"
-    }
-    
-    if book_id in book_titles:
-        print(f"Libro identificato: {book_titles[book_id]}")
-    
     # Construct the download URL for the plain text version
     url = f"https://www.gutenberg.org/files/{book_id}/{book_id}-0.txt"
     try:
         response = requests.get(url)
         response.raise_for_status()
         return response.text
-    except requests.exceptions.HTTPError:
-        # Try alternative URL format
+    except requests.exceptions.HTTPError: #TODO: sta cosa dell'url alternativo non mi convince
+        # url alternativo
         url = f"https://www.gutenberg.org/cache/epub/{book_id}/pg{book_id}.txt"
         response = requests.get(url)
         response.raise_for_status()
         return response.text
 
 def preprocess_text(raw_text):
-    """
-    Preprocess the text for Word2Vec.
-    """
-    # Convert to lowercase
     raw_text = raw_text.lower()
     
-    # Remove punctuation and numbers
     raw_text = re.sub(r'\d+', '', raw_text)
     raw_text = raw_text.translate(str.maketrans('', '', string.punctuation))
     
-    # Get stopwords
     stop_words = set(stopwords.words("english"))
     
-    # Split into sentences and tokenize
     sentences = []
     raw_sentences = re.split(r'(?<=[.!?])\s+', raw_text)
     
@@ -135,26 +98,16 @@ def preprocess_text(raw_text):
     
     for i, sentence in enumerate(raw_sentences):
         words = [word for word in word_tokenize(sentence) if word.isalpha() and word not in stop_words]
-        if words:  # Only add non-empty sentences
+        if words:  # aggiungi solo frasi non vuote
             sentences.append(words)
-        
-        # Add progress indicator
-        if i % 5000 == 0 and i > 0:
-            print(f"Elaborate {i} frasi...")
-    
+
     return sentences
 
 def train_word2vec(sentences, vector_size=100, window=5, min_count=5, sg=1):
-    """
-    Train a Word2Vec model on the given sentences.
-    """
     model = Word2Vec(sentences, vector_size=vector_size, window=window, min_count=min_count, sg=sg)
     return model
 
 def explore_model(model, words_to_explore=None):
-    """
-    Explore the Word2Vec model by printing similar words.
-    """
     if words_to_explore is None:
         common_words = ["man", "woman", "sea", "ship", "love", "time"]
         words_to_explore = [word for word in common_words if word.lower() in model.wv]
@@ -203,21 +156,15 @@ def cluster_words(model, words_to_cluster, n_clusters=3):
             print(f"Riduzione del numero di cluster da {n_clusters} a {len(vectors)}")
             n_clusters = len(vectors)
     
-    # Perform KMeans clustering
     kmeans = KMeans(n_clusters=n_clusters, random_state=42)
     labels = kmeans.fit_predict(vectors)
     
     return valid_words, vectors, labels
 
-def visualize_clusters(valid_words, vectors, labels, title="Clustering delle parole", save_path=None):
-    """
-    Visualize word clusters using PCA for dimensionality reduction.
-    """
-    # Apply PCA
+def visualize_clusters(valid_words, vectors, labels, title, save_path=None):
     pca = PCA(n_components=2)
     reduced = pca.fit_transform(vectors)
     
-    # Visualization
     plt.figure(figsize=(10, 7))
     n_clusters = len(set(labels))
     palette = sns.color_palette("bright", n_clusters)
@@ -301,12 +248,10 @@ if __name__ == "__main__":
     # Explore and get valid words
     valid_words = explore_model(model, words_to_explore)
     
-    # Visualize word vectors with PCA
     if valid_words and len(valid_words) >= 2:
         print("\n--- Visualizzazione vettori ---")
         visualize_vectors(model, valid_words, save_path="word_vectors_pca.png")
         
-        # Wait for user acknowledgment before continuing
         input("\nPremi Invio per continuare al clustering...")
     else:
         print("\nNon ci sono abbastanza parole valide per visualizzare i vettori.")
@@ -332,7 +277,6 @@ if __name__ == "__main__":
     valid_words, vectors, labels = cluster_words(model, words_to_cluster, n_clusters)
     
     if valid_words and vectors is not None and labels is not None:
-        # Visualize clusters
         visualize_clusters(
             valid_words, vectors, labels,
             title=f"Clustering delle parole con Word2Vec + KMeans - {n_clusters} cluster",
