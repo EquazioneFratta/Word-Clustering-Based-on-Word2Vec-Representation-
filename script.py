@@ -1,14 +1,14 @@
 import re
 import string
-import requests
+import matplotlib.pyplot as plt
+import seaborn as sns
+import nltk
 from nltk.corpus import stopwords
 from nltk.tokenize import word_tokenize
 from gensim.models import Word2Vec
 from sklearn.cluster import KMeans
 from sklearn.decomposition import PCA
-import matplotlib.pyplot as plt
-import seaborn as sns
-import nltk
+from lib import download_gutenberg_book
 
 nltk.download('punkt_tab')
 nltk.download('stopwords')
@@ -57,35 +57,11 @@ def visualize_vectors(model, words, save_path=None):
     
     plt.show()
 
-def download_gutenberg_book(url_or_id):
-    #TODO: estrare l'ID del libro da un URL e poi sotto ricrea l'URL con l'ide estratto, mi sembra una cosa idiota
-    # se l'input è un URL, estrai l'ID del libro
-    if isinstance(url_or_id, str) and url_or_id.startswith('http'):
-        match = re.search(r'/(\d+)/?$', url_or_id)
-        if match:
-            book_id = match.group(1)
-        else:
-            raise ValueError("Impossibile estrarre l'ID del libro dall'URL")
-    else:
-        book_id = str(url_or_id)
-    
-    # Construct the download URL for the plain text version
-    url = f"https://www.gutenberg.org/files/{book_id}/{book_id}-0.txt"
-    try:
-        response = requests.get(url)
-        response.raise_for_status()
-        return response.text
-    except requests.exceptions.HTTPError: #TODO: sta cosa dell'url alternativo non mi convince
-        # url alternativo
-        url = f"https://www.gutenberg.org/cache/epub/{book_id}/pg{book_id}.txt"
-        response = requests.get(url)
-        response.raise_for_status()
-        return response.text
-
+# preprocess the text through tokenization, , and stopwords .
 def preprocess_text(raw_text):
+    # lowercasing
     raw_text = raw_text.lower()
-    
-    raw_text = re.sub(r'\d+', '', raw_text)
+    # punctuation removal
     raw_text = raw_text.translate(str.maketrans('', '', string.punctuation))
     
     stop_words = set(stopwords.words("english"))
@@ -93,18 +69,20 @@ def preprocess_text(raw_text):
     sentences = []
     raw_sentences = re.split(r'(?<=[.!?])\s+', raw_text)
     
-    print(f"Frasi totali trovate: {len(raw_sentences)}")
-    print("Elaborazione delle frasi in corso...")
+    # print(f"Frasi totali trovate: {len(raw_sentences)}")
     
-    for i, sentence in enumerate(raw_sentences):
-        words = [word for word in word_tokenize(sentence) if word.isalpha() and word not in stop_words]
-        if words:  # aggiungi solo frasi non vuote
+    for sentence in raw_sentences:
+        # word.isalpha() → tiene solo parole fatte di lettere (quindi esclude numeri, simboli, ecc.). Secondo me stringe troppo
+        # words = [word for word in word_tokenize(sentence) if word.isalpha() and word not in stop_words] 
+        words = [word for word in word_tokenize(sentence) if word not in stop_words]
+    
+        if words:
             sentences.append(words)
 
     return sentences
-
-def train_word2vec(sentences, vector_size=100, window=5, min_count=5, sg=1):
-    model = Word2Vec(sentences, vector_size=vector_size, window=window, min_count=min_count, sg=sg)
+# slide 99-100 spiega i parametri
+def train_word2vec(sentences):
+    model = Word2Vec(sentences, vector_size=100, window=5, min_count=5, sg=1)
     return model
 
 def explore_model(model, words_to_explore=None):
@@ -193,7 +171,6 @@ if __name__ == "__main__":
     choice = input("\nInserisci la tua scelta (1-2): ").strip()
     
     if choice == "1":
-        # Load from local file
         try:
             with open("moby-dick-clean.txt", "r", encoding="utf-8") as f:
                 raw_text = f.read()
@@ -203,7 +180,6 @@ if __name__ == "__main__":
             exit()
     
     elif choice == "2":
-        # Download from Project Gutenberg
         book_id = input("Inserisci l'ID del libro su Project Gutenberg (es. 2701 per Moby Dick): ").strip()
         print(f"Download del libro da Project Gutenberg...")
         try:
@@ -219,7 +195,6 @@ if __name__ == "__main__":
     # Preprocess the text
     print("\nPreelaborazione del testo...")
     sentences = preprocess_text(raw_text)
-    print(f"Testo preelaborato: {len(sentences)} frasi estratte")
     
     # Train Word2Vec model
     print("\nAddestramento modello Word2Vec...")
