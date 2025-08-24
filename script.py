@@ -1,17 +1,9 @@
-import re
-import string
 import matplotlib.pyplot as plt
 import seaborn as sns
 import nltk
-from nltk.corpus import stopwords
-from nltk.tokenize import word_tokenize
 from gensim.models import Word2Vec
 from sklearn.cluster import KMeans
 from sklearn.decomposition import PCA
-from lib import download_gutenberg_book
-
-nltk.download('punkt_tab')
-nltk.download('stopwords')
 
 def visualize_vectors(model, words, save_path=None):
     vectors = []
@@ -57,42 +49,7 @@ def visualize_vectors(model, words, save_path=None):
     
     plt.show()
 
-# preprocess the text through tokenization, , and stopwords .
-def preprocess_text(raw_text):
-    # lowercasing
-    raw_text = raw_text.lower()
-    # punctuation removal
-    raw_text = raw_text.translate(str.maketrans('', '', string.punctuation))
-    
-    stop_words = set(stopwords.words("english"))
-    
-    sentences = []
-    raw_sentences = re.split(r'(?<=[.!?])\s+', raw_text)
-    
-    # print(f"Frasi totali trovate: {len(raw_sentences)}")
-    
-    for sentence in raw_sentences:
-        # word.isalpha() → tiene solo parole fatte di lettere (quindi esclude numeri, simboli, ecc.). Secondo me stringe troppo
-        # words = [word for word in word_tokenize(sentence) if word.isalpha() and word not in stop_words] 
-        words = [word for word in word_tokenize(sentence) if word not in stop_words]
-    
-        if words:
-            sentences.append(words)
-
-    return sentences
-# slide 99-100 spiega i parametri
-def train_word2vec(sentences):
-    model = Word2Vec(sentences, vector_size=100, window=5, min_count=5, sg=1)
-    return model
-
 def explore_model(model, words_to_explore=None):
-    if words_to_explore is None:
-        common_words = ["man", "woman", "sea", "ship", "love", "time"]
-        words_to_explore = [word for word in common_words if word.lower() in model.wv]
-        
-        if not words_to_explore and len(model.wv.index_to_key) > 0:
-            words_to_explore = model.wv.index_to_key[:5]
-    
     print("\n=== Esplorazione Modello Word2Vec ===")
     for word in words_to_explore:
         word_lower = word.lower()
@@ -162,49 +119,8 @@ def visualize_clusters(valid_words, vectors, labels, title, save_path=None):
     plt.show()
 
 if __name__ == "__main__":
-    print("Addestramento Word2Vec e Clustering")
-    print("==================================")
-    print("\nScegli una fonte di testo:")
-    print("1. Carica file locale 'moby-dick-clean.txt'")
-    print("2. Scarica un libro da Project Gutenberg")
-
-    choice = input("\nInserisci la tua scelta (1-2): ").strip()
     
-    if choice == "1":
-        try:
-            with open("moby-dick-clean.txt", "r", encoding="utf-8") as f:
-                raw_text = f.read()
-            print("'moby-dick-clean.txt' caricato con successo")
-        except FileNotFoundError:
-            print("File 'moby-dick-clean.txt' non trovato. Assicurati che esista nella directory corrente.")
-            exit()
-    
-    elif choice == "2":
-        book_id = input("Inserisci l'ID del libro su Project Gutenberg (es. 2701 per Moby Dick): ").strip()
-        print(f"Download del libro da Project Gutenberg...")
-        try:
-            raw_text = download_gutenberg_book(book_id)
-            print("Download completato!")
-        except Exception as e:
-            print(f"Errore durante il download del libro: {str(e)}")
-            exit()
-    else:
-        print("Scelta non valida. Uscita...")
-        exit()
-    
-    # Preprocess the text
-    print("\nPreelaborazione del testo...")
-    sentences = preprocess_text(raw_text)
-    
-    # Train Word2Vec model
-    print("\nAddestramento modello Word2Vec...")
-    model = train_word2vec(sentences)
-    print("Addestramento del modello completato!")
-    
-    # Save the model
-    model_path = "w2v_model.model"
-    model.save(model_path)
-    print(f"Modello salvato in {model_path}")
+    model = Word2Vec.load("w2v_model.model")
     
     # Explore the model
     print("\n--- Esplorazione del modello ---")
