@@ -17,19 +17,18 @@ def preprocess_text(raw_text):
     
     processed_sentences = []
     for sentence in raw_sentences:
-        # Poi rimuovi punteggiatura e preprocessa
         sentence = re.sub(r"[^\w\s']", " ", sentence)
         words = word_tokenize(sentence)
 
-        words = [word.strip('_') for word in words] #rimuove underscore nelle parole enfatizzate
+        words = [word.strip('_') for word in words] 
 
         stop_words = set(stopwords.words("english"))
         words = [word for word in words if word not in stop_words and len(word) > 2]
         
-        if len(words) > 3:  # Solo frasi con senso
+        if len(words) > 3:  
             processed_sentences.append(words)
     
-    return processed_sentences  # Lista di frasi vere
+    return processed_sentences
 
 if __name__ == "__main__":
     all_texts = []
@@ -40,21 +39,19 @@ if __name__ == "__main__":
             with open(file_path, "r", encoding="utf-8") as f:
                 raw_text = f.read()
                 all_texts.append(raw_text)
-    # Preprocessa ogni file e accumula le frasi
+
     all_sentences = []
     for text in all_texts:
         sentences = preprocess_text(text)
         all_sentences.extend(sentences)
 
-    print("\nAddestramento modello Word2Vec...")
-    # slide 99-100 spiega i parametri
-    #vector size: Determina quante dimensioni ha ogni vettore di parola. (100-300)
-    #window: Quante parole a sinistra e destra considera per ogni parola target. (3-7)
-    #min count: Ignora parole che appaiono meno di N volte nel corpus.(3-5)
-    #sg:Determina l'architettura dell'algoritmo. (1 skip grab, 2 cbow)
+    print("Addestramento modello ...")
+    #vector size: determina quante dimensioni ha ogni vettore di parola
+    #window: quante parole a sinistra e destra considera per ogni parola target
+    #min_count: ignora parole che appaiono meno di N volte nel corpus
     model = Word2Vec(all_sentences, vector_size=200, window=7, min_count=4, sg=1, epochs=50)
     
-    print("Addestramento del modello completato!")
+    print("Addestramento del modello completato")
     
     model.save("w2v_model.model")
     
