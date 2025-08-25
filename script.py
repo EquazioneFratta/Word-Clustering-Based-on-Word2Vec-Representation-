@@ -5,39 +5,26 @@ from gensim.models import Word2Vec
 from sklearn.cluster import KMeans
 from sklearn.decomposition import PCA
 
-def visualize_vectors(model, words, save_path=None):
-    vectors = []
-    labels = []
+def visualize_vectors(model, words, save_path):
+    vectors = [model.wv[w] for w in words]
+    labels = [w for w in words]
     
-    for word in words:
-        if word in model.wv:
-            vectors.append(model.wv[word])
-            labels.append(word)
-  
     pca = PCA(n_components=2)
     reduced_vectors = pca.fit_transform(vectors)
     
-    plt.figure(figsize=(10, 7))
-    plt.scatter(reduced_vectors[:, 0], reduced_vectors[:, 1], s=100)
+    plt.figure(figsize=(8,6))
+    plt.scatter(reduced_vectors[:, 0], reduced_vectors[:, 1])  
     
     for i, word in enumerate(labels):
-        plt.annotate(word, 
-                    (reduced_vectors[i, 0], reduced_vectors[i, 1]),
-                    fontsize=12,
-                    alpha=0.8,
-                    xytext=(5, 2),
-                    textcoords='offset points')
-    
-    plt.title("Visualizzazione vettori di parole (PCA)")
-    plt.xlabel("Dimensione 1")
-    plt.ylabel("Dimensione 2")
-    plt.grid(True)
-    
-    if save_path:
-        plt.savefig(save_path)
-    
-    plt.show()
+        plt.annotate(word,
+                     (reduced_vectors[i, 0], reduced_vectors[i, 1]),
+                     xytext=(5, 2),
+                     textcoords='offset points'
+                     )
 
+    plt.title("Vettori Word2Vec con PCA")
+    plt.savefig(save_path)
+    
 def explore_model(model, words_to_explore):
     for word in words_to_explore:
         if word in model.wv:
@@ -46,7 +33,7 @@ def explore_model(model, words_to_explore):
             for similar_word, similarity in similar_words:
                 print(f"  {similar_word}: {similarity:.4f}")
         
-    return [w.lower() for w in words_to_explore if w.lower() in model.wv]  # Return valid words for visualization
+    return [w for w in words_to_explore if w in model.wv]
 
 def cluster_words(model, words_to_cluster, n_clusters=3):
     """
