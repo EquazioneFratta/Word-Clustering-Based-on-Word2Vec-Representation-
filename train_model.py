@@ -6,10 +6,9 @@ from nltk.corpus import stopwords
 from nltk.tokenize import word_tokenize
 from gensim.models import Word2Vec
 
-nltk.download('punkt')
-nltk.download('stopwords')
+# nltk.download('punkt')
+# nltk.download('stopwords')
 
-# preprocess the text through tokenization, , and stopwords .
 def preprocess_text(raw_text):
     # lowercasing
     raw_text = raw_text.lower()
@@ -51,11 +50,11 @@ if __name__ == "__main__":
     for text in all_texts:
         sentences = preprocess_text(text)
         all_sentences.extend(sentences)
-        
+
     print("\nAddestramento modello Word2Vec...")
     # slide 99-100 spiega i parametri
     # min_count : Tutte le parole con frequenza < 5 vengono ignorate e non entrano nel vocabolario del modello
-    model = Word2Vec(all_sentences, vector_size=300, window=15, min_count=2, sg=1, epochs=50)
+    model = Word2Vec(all_sentences, vector_size=100, window=5, min_count=2, sg=1, epochs=50)
     
     print("Addestramento del modello completato!")
     
