@@ -10,30 +10,26 @@ from gensim.models import Word2Vec
 # nltk.download('stopwords')
 
 def preprocess_text(raw_text):
-    # lowercasing
-    raw_text = raw_text.lower()
-    # punctuation removal
-    # normalizza in NFKD (separa lettere e segni diacritici)
-    raw_text = unicodedata.normalize("NFKD", text)
-    # rimuove simboli non alfabetici (compresi ’ “ … ecc.)
-    raw_text = re.sub(r"[^\w\s]", " ", text)
+    text = raw_text.lower()
+    text = unicodedata.normalize("NFKD", text)
     
-    stop_words = set(stopwords.words("english"))
+    raw_sentences = re.split(r'(?<=[.!?])\s+', text)
     
-    sentences = []
-    raw_sentences = re.split(r'(?<=[.!?])\s+', raw_text)
-    
-    # print(f"Frasi totali trovate: {len(raw_sentences)}")
-    
+    processed_sentences = []
     for sentence in raw_sentences:
-        # word.isalpha() → tiene solo parole fatte di lettere (quindi esclude numeri, simboli, ecc.). Secondo me stringe troppo
-        # words = [word for word in word_tokenize(sentence) if word.isalpha() and word not in stop_words] 
-        words = [word for word in word_tokenize(sentence) if word not in stop_words]
-    
-        if words:
-            sentences.append(words)
+        # Poi rimuovi punteggiatura e preprocessa
+        sentence = re.sub(r"[^\w\s']", " ", sentence)
+        words = word_tokenize(sentence)
 
-    return sentences
+        words = [word.strip('_') for word in words] #rimuove underscore nelle parole enfatizzate
+
+        stop_words = set(stopwords.words("english"))
+        words = [word for word in words if word not in stop_words and len(word) > 2]
+        
+        if len(words) > 3:  # Solo frasi con senso
+            processed_sentences.append(words)
+    
+    return processed_sentences  # Lista di frasi vere
 
 if __name__ == "__main__":
     all_texts = []
@@ -44,7 +40,6 @@ if __name__ == "__main__":
             with open(file_path, "r", encoding="utf-8") as f:
                 raw_text = f.read()
                 all_texts.append(raw_text)
-    
     # Preprocessa ogni file e accumula le frasi
     all_sentences = []
     for text in all_texts:
@@ -53,8 +48,11 @@ if __name__ == "__main__":
 
     print("\nAddestramento modello Word2Vec...")
     # slide 99-100 spiega i parametri
-    # min_count : Tutte le parole con frequenza < 5 vengono ignorate e non entrano nel vocabolario del modello
-    model = Word2Vec(all_sentences, vector_size=100, window=5, min_count=2, sg=1, epochs=50)
+    #vector size: Determina quante dimensioni ha ogni vettore di parola. (100-300)
+    #window: Quante parole a sinistra e destra considera per ogni parola target. (3-7)
+    #min count: Ignora parole che appaiono meno di N volte nel corpus.(3-5)
+    #sg:Determina l'architettura dell'algoritmo. (1 skip grab, 2 cbow)
+    model = Word2Vec(all_sentences, vector_size=200, window=7, min_count=4, sg=1, epochs=50)
     
     print("Addestramento del modello completato!")
     
