@@ -11,20 +11,23 @@ from gensim.models import Word2Vec
 
 def preprocess_text(raw_text):
     text = raw_text.lower()
+    #per normalizzare lettere accentate
     text = unicodedata.normalize("NFKD", text)
     
     raw_sentences = re.split(r'(?<=[.!?])\s+', text)
     
     processed_sentences = []
     for sentence in raw_sentences:
+        #rimuove simboli speciali
         sentence = re.sub(r"[^\w\s']", " ", sentence)
         words = word_tokenize(sentence)
-
+        #Rimuove underscore
         words = [word.strip('_') for word in words] 
 
         stop_words = set(stopwords.words("english"))
+        #rimuove stopword e parole più corte di 2
         words = [word for word in words if word not in stop_words and len(word) > 2]
-        
+        #se la frase ha men o di 3 parole la esclude, altrimenti non ho contesto
         if len(words) > 3:  
             processed_sentences.append(words)
     

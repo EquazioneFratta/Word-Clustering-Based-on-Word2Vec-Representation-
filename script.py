@@ -27,33 +27,15 @@ def visualize_vectors(model, words, save_path):
     
 def explore_model(model, words_to_explore):
     for word in words_to_explore:
-        if word in model.wv:
-            print(f"Parole più simili a '{word}':")
-            similar_words = model.wv.most_similar(word, topn=5)
-            for similar_word, similarity in similar_words:
-                print(f"  {similar_word}: {similarity:.4f}")
+        
+        print(f"Parole più simili a '{word}':")
+        similar_words = model.wv.most_similar(word, topn=5)
+        for similar_word, similarity in similar_words:
+            print(f"  {similar_word}: {similarity:.4f}")
         
     return [w for w in words_to_explore if w in model.wv]
 
-def cluster_words(model, words_to_cluster, n_clusters=3):
-    """
-    Cluster a list of words using KMeans based on their Word2Vec representations.
-    """
-    # Check if words are in the vocabulary (case insensitive)
-    vectors = []
-    valid_words = []
-    missing_words = []
-    
-    for word in words_to_cluster:
-        word_lower = word.lower()
-        if word_lower in model.wv:
-            vectors.append(model.wv[word_lower])
-            valid_words.append(word_lower)
-        else:
-            missing_words.append(word)
-    
-    if missing_words:
-        print(f"Parole non trovate nel vocabolario: {missing_words}")
+def cluster_words(vectors, n_clusters=3):
     
     if len(vectors) < n_clusters:
         if len(vectors) < 2:
@@ -66,7 +48,7 @@ def cluster_words(model, words_to_cluster, n_clusters=3):
     kmeans = KMeans(n_clusters=n_clusters, random_state=42)
     labels = kmeans.fit_predict(vectors)
     
-    return valid_words, vectors, labels
+    return labels
 
 def visualize_clusters(valid_words, vectors, labels, title, save_path=None):
     pca = PCA(n_components=2)
@@ -106,8 +88,21 @@ if __name__ == "__main__":
     else:
         words_to_explore = default_words
         print(f"Uso parole predefinite: {', '.join(default_words)}")
+    valid_words = []
+    missing_words = []
+    vectors = []
+    for word in words_to_explore:
+        word_lower = word.lower()
+        if word_lower in model.wv:
+            vectors.append(model.wv[word_lower])
+            valid_words.append(word_lower)
+        else:
+            missing_words.append(word)
     
-    valid_words = explore_model(model, words_to_explore)
+    if missing_words:
+        print(f"Parole non trovate nel vocabolario: {missing_words}")
+
+    valid_words = explore_model(model, valid_words)
     
     print("Visualizzazione vettori")
     visualize_vectors(model, valid_words, save_path="word_vectors_pca.png")
@@ -130,7 +125,7 @@ if __name__ == "__main__":
     n_clusters = int(input("Inserisci il numero di cluster (predefinito: 3): ") or 3)
     
     # valid_words, vectors, labels = cluster_words(model, words_to_cluster, n_clusters)
-    valid_words, vectors, labels = cluster_words(model, valid_words, n_clusters)
+    labels = cluster_words(vectors, n_clusters)
     
     visualize_clusters(
         valid_words, vectors, labels,
