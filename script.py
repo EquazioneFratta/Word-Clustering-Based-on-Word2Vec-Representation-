@@ -109,22 +109,9 @@ if __name__ == "__main__":
             
     print("Clustering delle parole")
     
-    # default_clusters = ["man", "woman", "love", "death", "life", "time", "world", "water"]
-    
-    # print("Inserisci le parole da raggruppare (separate da virgola) o premi Invio per usare le stesse parole:")
-    # print(f"Parole suggerite: {', '.join(default_clusters)}")
-    
-    # cluster_input = input("> ").strip()
-    
-    # if cluster_input:
-    #     words_to_cluster = [w.strip() for w in cluster_input.split(",")]
-    # else:
-    #     print(f"Uso parole: {', '.join(words_to_cluster)}")
-    # print(f"Uso parole: {', '.join(valid_words)}")
     
     n_clusters = int(input("Inserisci il numero di cluster (predefinito: 3): ") or 3)
     
-    # valid_words, vectors, labels = cluster_words(model, words_to_cluster, n_clusters)
     labels = cluster_words(vectors, n_clusters)
     
     visualize_clusters(
